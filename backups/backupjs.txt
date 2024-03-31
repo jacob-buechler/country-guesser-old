@@ -1,0 +1,144 @@
+<script>
+
+// Define states
+var states = [
+    isShowing = false,
+    isGuessing = false,
+];
+
+var guess;
+// Define the Timer element
+const timerElement = document.getElementById('timer');
+
+// Show the map and start the timer
+function showMapAndStartTimer() {
+    startTimer(<?php echo $showFor * 1000; ?>, timerElement); // Convert seconds to milliseconds
+    document.getElementById('worldmap').style.display = 'block';
+    document.getElementById('startBtn').disabled = true;
+    selectRandomCountry();
+    states.isShowing = true;
+}
+
+// Start the timer and display Timer: <seconds>:<milliseconds>
+function startTimer(duration, display) {
+    var timer = duration, seconds, milliseconds;
+    states.isShowing = true;
+    var intervalId = setInterval(function () {
+        seconds = parseInt(timer / 1000, 10);
+        milliseconds = Math.round(timer % 1000); // Round milliseconds to the nearest integer
+
+
+
+        // Ensure seconds and milliseconds are displayed with leading zeros if necessary
+        seconds = seconds < 10 ? "0" + seconds : seconds;
+        milliseconds = milliseconds < 100 ? "0" + milliseconds : milliseconds;
+        milliseconds = milliseconds < 10 ? "00" + milliseconds : milliseconds;
+
+        // Update the display with the formatted timer
+        display.textContent = "Timer: " + seconds + ":" + milliseconds;
+
+        // Decrement the timer
+        if (timer <= 0) {
+            clearInterval(intervalId); // Stop the timer
+            // Hide the map children after the timer expires
+            document.getElementById('nextBtn').disabled = false;
+            if (states.isGuessing) {
+                endGuessing();
+            } else if (states.isShowing) {
+                endShowing();
+            }
+            setTimeout(function() {
+                var map = document.getElementById('worldmap');
+                
+                    map.style.display = 'none'; 
+                
+            }, 0); // Delay execution until after the current script completes
+        } else {
+            timer -= 10; // Decrement by 10 milliseconds
+        }
+    }, 10); // Update the timer every 10 milliseconds
+}
+
+// Selecting the SVG element
+const svg = document.querySelector('#worldmap');
+
+// Selecting all path elements within the SVG
+<?php if (isset($godMode) && $godMode == "on") {
+    echo "const paths = document.querySelectorAll('#worldmap path');";
+} else {
+    echo "const paths = document.querySelectorAll('#worldmap path.normal');";
+}?>
+
+// Convert NodeList to an array
+const pathsArray = Array.from(paths);
+
+var randomPath;
+
+function selectRandomCountry() {
+    // Selecting a random path
+    const randomIndex = Math.floor(Math.random() * pathsArray.length);
+    randomPath = pathsArray[randomIndex];
+
+    // Applying fill color to the random path (optional)
+    randomPath.setAttribute('fill', 'red');
+}
+
+function startGuessing() {
+    // Start guessing
+    startTimer(<?php echo $guessFor * 1000; ?>, timerElement);
+    document.getElementById('nextBtn').disabled = true;
+    document.getElementById('nextBtn').innerText = "Guessing...";
+    states.isGuessing = true;
+}
+function endGuessing() {
+    // End guessing
+    document.getElementById('nextBtn').disabled = false;
+    document.getElementById('nextBtn').innerText = "Auflösung";
+    document.getElementById('nextBtn').setAttribute('onclick', 'showResult()');
+    document.getElementById('timer').style.display = 'none';
+    document.getElementById('guessFld').style.display = 'block';
+    states.isGuessing = false;
+}
+function endShowing() {
+    // End showing
+    document.getElementById('nextBtn').disabled = false;
+    document.getElementById('nextBtn').innerText = "Start Guessing";
+    document.getElementById('nextBtn').setAttribute('onclick','startGuessing()');
+    states.isShowing = false;
+}
+
+// Add a change event listener to the streamersGuess input field
+document.getElementById('streamersGuess').addEventListener('change', function () {
+    // Get the value of the input field
+    guess = document.getElementById('streamersGuess').value;
+    console.log(guess);
+});
+
+function showResult() {
+    // Show the result
+    document.getElementById('guessFld').style.display = 'none';
+    document.getElementById('resultCard').style.display = 'flex';
+    document.getElementById('result').innerHTML = "Das Land war: " + randomPath.id;
+    document.getElementById('resultStreamer').innerHTML = "<?php echo $streamer; ?> hat das Land " + guess + " gewählt, und liegt somit " + (guess === randomPath.id? "richtig" : "falsch") + "!";
+    document.getElementById('resultChat').innerHTML = "Chat hat das Land germany gewählt, und liegt somit " + ("germany" === randomPath.id? "richtig" : "falsch") + "!";
+    document.getElementById('nextBtn').disabled = false;
+    document.getElementById('nextBtn').innerText = "Nächste Runde";
+    document.getElementById('nextBtn').setAttribute('onclick','reset()');
+    randomPath.setAttribute('fill', '');
+    guess = null;
+    $.post("incrementSession.php", function(data) {
+        console.log(data); // Log the response from the server
+    });
+
+}
+
+function reset() {
+    document.getElementById('resultCard').style.display = 'none';
+    document.getElementById('nextBtn').disabled = true;
+    document.getElementById('nextBtn').innerText = "Start Guessing";
+    document.getElementById('worldmap').style.display = 'none';
+    document.getElementById('startBtn').disabled = false;
+    document.getElementById('timer').style.display = 'block';
+    document.getElementById('guessFld').value = '';
+}
+</script>

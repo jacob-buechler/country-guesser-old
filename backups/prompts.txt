@@ -1,0 +1,2 @@
+v1:
+Überprüfe ob das land mehr als 20 mio einwohner hat wenn ja füge 'class="normal"' hinzu, zudem übersetze alle länder namen in deutsch wenn es einen deutschen namen gibt!! (verändere nichts außer name und class):
